@@ -39,6 +39,14 @@ verifyConfig () {
 
 }
 
+TriggerScanWebhook () {
+	if [ "$scanHook" ]
+	then
+		rm "scanNeeded.pid"
+		curl -s -X POST "{$scanHook}"
+	fi
+}
+
 Configuration () {
 	sleepTimer=0.5
 	tidaldlFail=0
@@ -65,7 +73,7 @@ Configuration () {
 	if [ -f "scanNeeded.pid" ]; then
 		TriggerScanWebhook
 	fi
-	
+
 	if [ ! -d /config/xdg ]; then
 		mkdir -p /config/xdg
 	fi
@@ -1827,13 +1835,7 @@ NotifyWebhook () {
 	fi
 }
 
-TriggerScanWebhook () {
-	if [ "$scanHook" ]
-	then
-		rm "scanNeeded.pid"
-		curl -s -X POST "{$scanHook}"
-	fi
-}
+
 
 AudioProcess () {
 
