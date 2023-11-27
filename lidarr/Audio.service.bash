@@ -63,7 +63,7 @@ Configuration () {
 	log "1"; sleep 1
 	
 	if [ -f "scanNeeded.pid" ]; then
-		TriggerScanWebhook()
+		TriggerScanWebhook
 	fi
 	
 	if [ ! -d /config/xdg ]; then
