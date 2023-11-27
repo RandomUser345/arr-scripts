@@ -1830,8 +1830,11 @@ NotifyWebhook () {
 }
 
 TriggerScanWebhook () {
-	rm "scanNeeded.pid"
-	curl -s -X POST "{$scanHook}"
+	if [ "$scanHook" ]
+	then
+		rm "scanNeeded.pid"
+		curl -s -X POST "{$scanHook}"
+	fi
 }
 
 AudioProcess () {
