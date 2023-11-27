@@ -62,7 +62,11 @@ Configuration () {
 	log "2"; sleep 1
 	log "1"; sleep 1
 	
-	
+	if [ "$scanHook" ]; then
+		if [ -f "scanNeeded.pid" ]; then
+			TriggerScanWebhook()
+		fi
+	fi
 	
 	if [ ! -d /config/xdg ]; then
 		mkdir -p /config/xdg
@@ -870,6 +874,7 @@ AddReplaygainTags () {
 }
 
 NotifyLidarrForImport () {
+	touch "scanNeeded.pid"
 	LidarrProcessIt=$(curl -s "$arrUrl/api/v1/command" --header "X-Api-Key:"${arrApiKey} -H "Content-Type: application/json" --data "{\"name\":\"DownloadedAlbumsScan\", \"path\":\"$1\"}")
 	log "$page :: $wantedAlbumListSource :: $processNumber of $wantedListAlbumTotal :: $lidarrArtistName :: $lidarrAlbumTitle :: $lidarrAlbumType :: LIDARR IMPORT NOTIFICATION SENT! :: $1"
 }
@@ -1822,6 +1827,11 @@ NotifyWebhook () {
 		content="$1: $2"
 		curl -s -X POST "{$webHook}" -H 'Content-Type: application/json' -d '{"event":"'"$1"'", "message":"'"$2"'", "content":"'"$content"'"}'
 	fi
+}
+
+TriggerScanWebhook () {
+	rm "scanNeeded.pid"
+	curl -s -X GET "{$scanHook}"
 }
 
 AudioProcess () {
