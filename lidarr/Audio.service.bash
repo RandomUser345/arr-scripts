@@ -880,7 +880,8 @@ AddReplaygainTags () {
 }
 
 NotifyLidarrForImport () {
-	touch "/config/scanNeeded.pid"
+	echo $1 >> "/config/scanNeeded.pid"
+	#touch "/config/scanNeeded.pid"
 	LidarrProcessIt=$(curl -s "$arrUrl/api/v1/command" --header "X-Api-Key:"${arrApiKey} -H "Content-Type: application/json" --data "{\"name\":\"DownloadedAlbumsScan\", \"path\":\"$1\"}")
 	log "$page :: $wantedAlbumListSource :: $processNumber of $wantedListAlbumTotal :: $lidarrArtistName :: $lidarrAlbumTitle :: $lidarrAlbumType :: LIDARR IMPORT NOTIFICATION SENT! :: $1"
 }
