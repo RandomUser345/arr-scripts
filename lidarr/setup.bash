@@ -19,6 +19,7 @@ apk add -U --upgrade --no-cache \
   libc-dev \
   py3-pip \
   npm \
+  rust \
   cargo \
   yt-dlp && \
 echo "*** install freyr client ***" && \
