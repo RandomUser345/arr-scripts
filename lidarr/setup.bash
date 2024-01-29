@@ -27,6 +27,7 @@ echo "*** install python packages ***" && \
 pip install --upgrade --no-cache-dir \
   beets \
   yq \
+  xq \
   pyacoustid \
   requests \
   pylast \
