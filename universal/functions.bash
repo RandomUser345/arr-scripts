@@ -22,7 +22,7 @@ getArrAppInfo () {
     if [ "$arrUrlBase" == "null" ]; then
       arrUrlBase=""
     else
-      arrUrlBase="/$(echo "$arrUrlBase" | sed "s/\///")"
+      arrUrlBase="/$(echo "$arrUrlBase" | sed "s/\///g")"
     fi
     arrName="$(cat /config/config.xml | xq | jq -r .Config.InstanceName)"
     arrApiKey="$(cat /config/config.xml | xq | jq -r .Config.ApiKey)"
