@@ -28,6 +28,7 @@ getArrAppInfo () {
     arrApiKey="$(cat /config/config.xml | xq | jq -r .Config.ApiKey)"
     arrPort="$(cat /config/config.xml | xq | jq -r .Config.Port)"
     arrUrl="http://127.0.0.1:${arrPort}${arrUrlBase}"
+    log "ArrUrl: "$arrUrl
   fi
 }
 
