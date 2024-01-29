@@ -1,5 +1,5 @@
 #!/usr/bin/with-contenv bash
-scriptVersion="2.24-1"
+scriptVersion="2.30"
 scriptName="Audio"
 
 ### Import Settings
@@ -35,6 +35,10 @@ verifyConfig () {
   	deezerClientTestDownloadId="197472472"
   fi
 
+  if [ -z "$ignoreInstrumentalRelease" ]; then
+  	ignoreInstrumentalRelease="true"
+  fi
+  
   audioPath="$downloadPath/audio"
 
 }
@@ -675,7 +679,7 @@ DownloadProcess () {
 	fi
 	
 	albumquality="$(find "$audioPath"/incomplete/ -type f -regex ".*/.*\.\(flac\|opus\|m4a\|mp3\)" | head -n 1 | egrep -i -E -o "\.{1}\w*$" | sed  's/\.//g')"
-	downloadedAlbumFolder="$lidarrArtistNameSanitized-$downloadedAlbumTitleClean ($3)-${albumquality^^}-$1-$2"
+	downloadedAlbumFolder="$lidarrArtistNameSanitized-${downloadedAlbumTitleClean:0:100} ($3)-${albumquality^^}-$1-$2"
 
 	find "$audioPath/incomplete" -type f -regex ".*/.*\.\(flac\|opus\|m4a\|mp3\)" -print0 | while IFS= read -r -d '' audio; do
         file="${audio}"
@@ -1244,8 +1248,8 @@ SearchProcess () {
 				releaseDisambiguation=" ($releaseDisambiguation)" 
 			fi
 			echo "${releaseTitle}${releaseDisambiguation}" >> /temp-release-list 
-			echo "$lidarrAlbumTitle" >> /temp-release-list 
 		done
+  		echo "$lidarrAlbumTitle" >> /temp-release-list 
 
 		# Get Release Titles
 		OLDIFS="$IFS"
@@ -1277,11 +1281,25 @@ SearchProcess () {
 				releaseProcessCount=$(( $releaseProcessCount + 1))
 				lidarrReleaseTitle="${lidarrReleaseTitles[$title]}"
 				lidarrAlbumReleaseTitleClean=$(echo "$lidarrReleaseTitle" | sed -e "s%[^[:alpha:][:digit:]]%%g" -e "s/  */ /g" | sed 's/^[.]*//' | sed  's/[.]*$//g' | sed  's/^ *//g' | sed 's/ *$//g')
+    				lidarrAlbumReleaseTitleClean="${lidarrAlbumReleaseTitleClean:0:130}"
 				lidarrAlbumReleaseTitleSearchClean="$(echo "$lidarrReleaseTitle" | sed -e "s%[^[:alpha:][:digit:]]% %g" -e "s/  */ /g" | sed 's/^[.]*//' | sed  's/[.]*$//g' | sed  's/^ *//g' | sed 's/ *$//g')"
 				lidarrAlbumReleaseTitleFirstWord="$(echo "$lidarrReleaseTitle"  | awk '{ print $1 }')"
 				lidarrAlbumReleaseTitleFirstWord="${lidarrAlbumReleaseTitleFirstWord:0:3}"
 				albumTitleSearch="$(jq -R -r @uri <<<"${lidarrAlbumReleaseTitleSearchClean}")"
 				#echo "Debugging :: $loopCount :: $releaseProcessCount :: $lidarrArtistForeignArtistId :: $lidarrReleaseTitle :: $lidarrAlbumReleasesMinTrackCount-$lidarrAlbumReleasesMaxTrackCount :: $lidarrAlbumReleaseTitleFirstWord :: $albumArtistNameSearch :: $albumTitleSearch"
+
+
+    				if echo "$lidarrAlbumTitle" | grep -i "instrumental" | read; then
+					sleep 0.01
+    				else
+					# ignore instrumental releases
+	    				if [ "$ignoreInstrumentalRelease" == "true" ]; then
+		    				if echo "$lidarrReleaseTitle" | grep -i "instrumental" | read; then
+							log "$page :: $wantedAlbumListSource :: $processNumber of $wantedListAlbumTotal :: $lidarrArtistName :: $lidarrAlbumTitle :: $lidarrAlbumType :: Instrumental Release Found, Skipping..."
+		     					continue
+		 				fi
+	      				fi
+				fi
 
 				# Skip Various Artists album search that is not supported...
 				if [ "$lidarrArtistForeignArtistId" != "89ad4ac3-39f7-470e-963a-56509c546377" ]; then
@@ -1426,6 +1444,7 @@ ArtistDeezerSearch () {
 		deezerAlbumData="$(echo "$deezerArtistAlbumsData" | jq -r "select(.id==$deezerAlbumID)")"
 		deezerAlbumTitle="$(echo "$deezerAlbumData" | jq -r ".title")"
 		deezerAlbumTitleClean="$(echo ${deezerAlbumTitle} | sed -e "s%[^[:alpha:][:digit:]]%%g" -e "s/  */ /g" | sed 's/^[.]*//' | sed  's/[.]*$//g' | sed  's/^ *//g' | sed 's/ *$//g')"
+  		deezerAlbumTitleClean="${deezerAlbumTitleClean:0:130}"
 		# String Character Count test, quicker than the levenshtein method to allow faster processing
 		characterMath=$(( ${#deezerAlbumTitleClean} - ${#lidarrAlbumReleaseTitleClean} ))
 		if [ "$characterMath" -gt "$matchDistance" ]; then
@@ -1439,8 +1458,6 @@ ArtistDeezerSearch () {
 		deezerAlbumData="$(cat "/config/extended/cache/deezer/$deezerAlbumID.json")"
 		deezerAlbumTrackCount="$(echo "$deezerAlbumData" | jq -r .nb_tracks)"
 		deezerAlbumExplicitLyrics="$(echo "$deezerAlbumData" | jq -r .explicit_lyrics)"								
-		deezerAlbumTitle="$(echo "$deezerAlbumData"| jq -r .title)"
-		deezerAlbumTitleClean="$(echo "$deezerAlbumTitle" | sed -e "s%[^[:alpha:][:digit:]]%%g" -e "s/  */ /g" | sed 's/^[.]*//' | sed  's/[.]*$//g' | sed  's/^ *//g' | sed 's/ *$//g')"
 		downloadedReleaseDate="$(echo "$deezerAlbumData" | jq -r .release_date)"
 		downloadedReleaseYear="${downloadedReleaseDate:0:4}"
 
@@ -1506,7 +1523,7 @@ FuzzyDeezerSearch () {
 			deezerAlbumTitle="$(echo "$deezerAlbumData" | jq -r ".title")"
 			deezerAlbumTitle="$(echo "$deezerAlbumTitle" | head -n1)"
 			deezerAlbumTitleClean="$(echo "$deezerAlbumTitle" | sed -e "s%[^[:alpha:][:digit:]]%%g" -e "s/  */ /g" | sed 's/^[.]*//' | sed  's/[.]*$//g' | sed  's/^ *//g' | sed 's/ *$//g')"
-
+			deezerAlbumTitleClean="${deezerAlbumTitleClean:0:130}"
 			# String Character Count test, quicker than the levenshtein method to allow faster processing
 			characterMath=$(( ${#deezerAlbumTitleClean} - ${#lidarrAlbumReleaseTitleClean} ))
 			if [ "$characterMath" -gt "$matchDistance" ]; then
@@ -1519,8 +1536,6 @@ FuzzyDeezerSearch () {
 			deezerAlbumData="$(cat "/config/extended/cache/deezer/$deezerAlbumID.json")"
 			deezerAlbumTrackCount="$(echo "$deezerAlbumData" | jq -r .nb_tracks)"
 			deezerAlbumExplicitLyrics="$(echo "$deezerAlbumData" | jq -r .explicit_lyrics)"								
-			deezerAlbumTitle="$(echo "$deezerAlbumData"| jq -r .title)"
-			deezerAlbumTitleClean="$(echo "$deezerAlbumTitle" | sed -e "s%[^[:alpha:][:digit:]]%%g" -e "s/  */ /g" | sed 's/^[.]*//' | sed  's/[.]*$//g' | sed  's/^ *//g' | sed 's/ *$//g')"
 			downloadedReleaseDate="$(echo "$deezerAlbumData" | jq -r .release_date)"
 			downloadedReleaseYear="${downloadedReleaseDate:0:4}"
 
@@ -1600,6 +1615,7 @@ ArtistTidalSearch () {
 		tidalArtistAlbumData=$(echo "$tidalArtistAlbumsData" | jq -r "select(.id=="$tidalArtistAlbumId")")
 		downloadedAlbumTitle="$(echo ${tidalArtistAlbumData} | jq -r .title)"
 		tidalAlbumTitleClean=$(echo ${downloadedAlbumTitle} | sed -e "s%[^[:alpha:][:digit:]]%%g" -e "s/  */ /g" | sed 's/^[.]*//' | sed  's/[.]*$//g' | sed  's/^ *//g' | sed 's/ *$//g')
+  		tidalAlbumTitleClean="${tidalAlbumTitleClean:0:130}"
 		downloadedReleaseDate="$(echo ${tidalArtistAlbumData} | jq -r .releaseDate)"
 		if [ "$downloadedReleaseDate" == "null" ]; then
 			downloadedReleaseDate=$(echo $tidalArtistAlbumData | jq -r '.streamStartDate')
@@ -1667,6 +1683,7 @@ FuzzyTidalSearch () {
 			tidalAlbumData="$(echo "$tidalSearch" | jq -r "select(.id==$tidalAlbumID)")"
 			tidalAlbumTitle=$(echo "$tidalAlbumData"| jq -r .title)
 			tidalAlbumTitleClean=$(echo ${tidalAlbumTitle} | sed -e "s%[^[:alpha:][:digit:]]%%g" -e "s/  */ /g" | sed 's/^[.]*//' | sed  's/[.]*$//g' | sed  's/^ *//g' | sed 's/ *$//g')
+   			tidalAlbumTitleClean="${tidalAlbumTitleClean:0:130}"
 			downloadedReleaseDate="$(echo ${tidalAlbumData} | jq -r .releaseDate)"
 			if [ "$downloadedReleaseDate" == "null" ]; then
 				downloadedReleaseDate=$(echo $tidalAlbumData | jq -r '.streamStartDate')
