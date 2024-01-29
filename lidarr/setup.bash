@@ -19,6 +19,7 @@ apk add -U --upgrade --no-cache \
   libc-dev \
   py3-pip \
   npm \
+  cargo \
   yt-dlp && \
 echo "*** install freyr client ***" && \
 apk add --no-cache -X http://dl-cdn.alpinelinux.org/alpine/edge/testing atomicparsley && \
