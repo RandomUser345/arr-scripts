@@ -1,12 +1,20 @@
 #!/usr/bin/with-contenv bash
 ### Default values
-scriptVersion="1.1"
+scriptVersion="1.5"
 scriptName="ARLChecker"
 sleepInterval='24h'
 ### Import Settings
 source /config/extended.conf
+#### Import Functions
+source /config/extended/functions
 
-echo Starting ARL Token Check...
+if [ "$dlClientSource" == "tidal" ]; then
+    log "Script is not enabled, enable by setting dlClientSource to \"deezer\" or \"both\" by modifying the \"/config/extended.conf\" config file..."
+    log "Sleeping (infinity)"
+    sleep infinity
+fi
+
+log "Starting ARL Token Check..."
 # run py script
 python /custom-services.d/python/ARLChecker.py -c
 
@@ -14,11 +22,11 @@ python /custom-services.d/python/ARLChecker.py -c
 # See issue #189
 if [[ -v arlUpdateInterval ]] && [ "$arlUpdateInterval" != "" ]
 then
-	echo 'Found Interval in extended.conf'
+	log "Found Interval in extended.conf"
 	sleepInterval="$arlUpdateInterval"
 else
-	echo 'Interval Fallback'
+	log "Interval Fallback"
 fi
 
-echo ARL Token Check Complete. Sleeping for ${sleepInterval}.
+log "ARL Token Check Complete. Sleeping for ${sleepInterval}."
 sleep ${sleepInterval}
