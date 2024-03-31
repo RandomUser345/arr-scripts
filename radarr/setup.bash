@@ -13,11 +13,11 @@ apk add -U --update --no-cache \
   libc-dev \
   py3-pip \
   gcc \
-  ffmpeg \
-  yt-dlp && \
+  ffmpeg && \
 echo "************ install python packages ************" && \
-pip install --upgrade --no-cache-dir -U \
+pip install --upgrade --no-cache-dir -U  --break-system-packages \
 		excludarr \
+                yt-dlp \
 		yq && \
 echo "************ setup SMA ************" && \
 echo "************ setup directory ************" && \
@@ -31,8 +31,8 @@ touch ${SMA_PATH}/config/sma.log && \
 chgrp users ${SMA_PATH}/config/sma.log && \
 chmod g+w ${SMA_PATH}/config/sma.log && \
 echo "************ install pip dependencies ************" && \
-python3 -m pip install --upgrade pip && \	
-pip3 install -r ${SMA_PATH}/setup/requirements.txt && \
+python3 -m pip install --break-system-packages --upgrade pip && \	
+pip3 install --break-system-packages -r ${SMA_PATH}/setup/requirements.txt && \
 echo "************ install recyclarr ************" && \
 mkdir -p /recyclarr && \
 wget "https://github.com/recyclarr/recyclarr/releases/latest/download/recyclarr-linux-musl-x64.tar.xz" -O "/recyclarr/recyclarr.tar.xz" && \

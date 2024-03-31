@@ -15,7 +15,7 @@ InstallRequirements () {
 	echo "*** install beets ***"
 	apk add --no-cache -X http://dl-cdn.alpinelinux.org/alpine/edge/community beets
 	echo "************ install python packages ************"
-	pip install --upgrade --no-cache-dir -U \
+	pip install --upgrade --no-cache-dir --break-system-packages -U \
 		m4b-merge \
 		pyacoustid \
 		requests \
@@ -36,8 +36,8 @@ InstallRequirements () {
   mkdir -p /config/scripts/sma/config
   touch /config/scripts/sma/config/sma.log
   echo "************ install pip dependencies ************"
-  pip install --upgrade pip --no-cache-dir 
-  pip install -r /config/scripts/sma/setup/requirements.txt --no-cache-dir 
+  pip install --upgrade pip --no-cache-dir --break-system-packages
+  pip install -r /config/scripts/sma/setup/requirements.txt --no-cache-dir --break-system-packages
   chmod 777 -R /config/scripts/sma
 }
 
