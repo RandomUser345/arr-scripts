@@ -1,5 +1,5 @@
 #!/usr/bin/with-contenv bash
-scriptVersion="2.36"
+scriptVersion="2.42"
 scriptName="Audio"
 
 ### Import Settings
@@ -7,12 +7,21 @@ source /config/extended.conf
 #### Import Functions
 source /config/extended/functions
 
+AddTag () {
+  log "adding arr-extended tag"
+  lidarrProcessIt=$(curl -s  "$arrUrl/api/v1/tag" --header "X-Api-Key:"${arrApiKey} -H "Content-Type: application/json" --data-raw '{"label":"arr-extended"}')
+}
+
 AddDownloadClient () {
-  if [ ! -d "$importPath" ]; then
-    mkdir -p "$importPath"
-	chmod 777 -R "$importPath"
-  fi
-  lidarrProcessIt=$(curl -s "$arrUrl/api/v1/downloadclient" --header "X-Api-Key:"${arrApiKey} -H "Content-Type: application/json" --data-raw "{\"enable\":true,\"protocol\":\"usenet\",\"priority\":10,\"removeCompletedDownloads\":true,\"removeFailedDownloads\":true,\"name\":\"Arr-Extended\",\"fields\":[{\"name\":\"nzbFolder\",\"value\":\"/config/extended/downloads/\"},{\"name\":\"watchFolder\",\"value\":\"$importPath\"}],\"implementationName\":\"Usenet Blackhole\",\"implementation\":\"UsenetBlackhole\",\"configContract\":\"UsenetBlackholeSetting\"s\",\"infoLink\":\"https://wiki.servarr.com/lidarr/supported#usenetblackhole\",\"tags\":[]}")
+  downloadClientCheck=$(curl -s  "$arrUrl/api/v1/downloadclient" --header "X-Api-Key:"${arrApiKey} -H "Content-Type: application/json")
+  if [ -z "$downloadClientCheck" ]; then
+    AddTag
+    if [ ! -d "$importPath" ]; then
+      mkdir -p "$importPath"
+      chmod 777 -R "$importPath"
+    fi
+    lidarrProcessIt=$(curl -s "$arrUrl/api/v1/downloadclient" --header "X-Api-Key:"${arrApiKey} -H "Content-Type: application/json" --data-raw "{\"enable\":true,\"protocol\":\"usenet\",\"priority\":10,\"removeCompletedDownloads\":true,\"removeFailedDownloads\":true,\"name\":\"Arr-Extended\",\"fields\":[{\"name\":\"nzbFolder\",\"value\":\"/config/extended/downloads/\"},{\"name\":\"watchFolder\",\"value\":\"$importPath\"}],\"implementationName\":\"Usenet Blackhole\",\"implementation\":\"UsenetBlackhole\",\"configContract\":\"UsenetBlackholeSettings\",\"infoLink\":\"https://wiki.servarr.com/lidarr/supported#usenetblackhole\",\"tags\":[]}")
+ fi
 }
 
 verifyConfig () {
@@ -721,15 +730,8 @@ DownloadProcess () {
 
 	mv "$audioPath/complete/$downloadedAlbumFolder" "$importPath"
 
-    if [ -d "$importPath/$downloadedAlbumFolder" ]; then
-	    LidarrProcessIt=$(curl -s "$arrUrl/api/v1/command" --header "X-Api-Key:"${arrApiKey} -H "Content-Type: application/json" --data-raw '{"name":"RefreshMonitoredDownloads"}')
-		log "$page :: $wantedAlbumListSource :: $processNumber of $wantedListAlbumTotal :: $lidarrArtistName :: $lidarrAlbumTitle :: $lidarrAlbumType :: LIDARR IMPORT NOTIFICATION SENT! :: $1"
-		lidarrDownloadImportNotfication="true"
-		LidarrTaskStatusCheck
-	fi
-
-	if [ -d "$audioPath/complete/$downloadedAlbumFolder" ]; then
-		NotifyLidarrForImport "$audioPath/complete/$downloadedAlbumFolder"
+	if [ -d "$importPath/$downloadedAlbumFolder" ]; then
+		NotifyLidarrForImport "$importPath/$downloadedAlbumFolder"
 		lidarrDownloadImportNotfication="true"
 		LidarrTaskStatusCheck
 	fi
@@ -1859,7 +1861,7 @@ log "Starting Script...."
 for (( ; ; )); do
 	let i++
  	logfileSetup
-    verifyConfig
+        verifyConfig
 	getArrAppInfo
 	verifyApiAccess
 	AudioProcess
