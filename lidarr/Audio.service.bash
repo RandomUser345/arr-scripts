@@ -101,10 +101,6 @@ Configuration () {
 	log "2"; sleep 1
 	log "1"; sleep 1
 	
-	if [ -f "/config/scanNeeded.pid" ]; then
-		TriggerScanWebhook
-	fi
-
 	if [ ! -d /config/xdg ]; then
 		mkdir -p /config/xdg
 	fi
@@ -1877,10 +1873,14 @@ log "Starting Script...."
 for (( ; ; )); do
 	let i++
  	logfileSetup
-    verifyConfig
+        verifyConfig
 	getArrAppInfo
 	verifyApiAccess
 	AudioProcess
+ 	if [ -f "/config/scanNeeded.pid" ]; then
+                log "Trigger Scanhook..."
+		TriggerScanWebhook
+	fi
 	log "Script sleeping for $audioScriptInterval..."
 	sleep $audioScriptInterval
 done
