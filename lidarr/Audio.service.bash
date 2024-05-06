@@ -1,5 +1,5 @@
 #!/usr/bin/with-contenv bash
-scriptVersion="2.42"
+scriptVersion="2.44"
 scriptName="Audio"
 
 ### Import Settings
@@ -13,13 +13,15 @@ AddTag () {
 }
 
 AddDownloadClient () {
-  downloadClientCheck=$(curl -s  "$arrUrl/api/v1/downloadclient" --header "X-Api-Key:"${arrApiKey} -H "Content-Type: application/json")
+  downloadClientsData=$(curl -s  "$arrUrl/api/v1/downloadclient" --header "X-Api-Key:"${arrApiKey} -H "Content-Type: application/json")
+  downloadClientCheck="$(echo $downloadClientsData | grep "Arr-Extended")"
   if [ -z "$downloadClientCheck" ]; then
     AddTag
     if [ ! -d "$importPath" ]; then
       mkdir -p "$importPath"
       chmod 777 -R "$importPath"
     fi
+	log "Adding download Client"
     lidarrProcessIt=$(curl -s "$arrUrl/api/v1/downloadclient" --header "X-Api-Key:"${arrApiKey} -H "Content-Type: application/json" --data-raw "{\"enable\":true,\"protocol\":\"usenet\",\"priority\":10,\"removeCompletedDownloads\":true,\"removeFailedDownloads\":true,\"name\":\"Arr-Extended\",\"fields\":[{\"name\":\"nzbFolder\",\"value\":\"/config/extended/downloads/\"},{\"name\":\"watchFolder\",\"value\":\"$importPath\"}],\"implementationName\":\"Usenet Blackhole\",\"implementation\":\"UsenetBlackhole\",\"configContract\":\"UsenetBlackholeSettings\",\"infoLink\":\"https://wiki.servarr.com/lidarr/supported#usenetblackhole\",\"tags\":[]}")
  fi
 }
@@ -64,6 +66,7 @@ verifyConfig () {
   fi
  
   audioPath="$downloadPath/audio"
+
 
 }
 
@@ -111,6 +114,7 @@ Configuration () {
 	fi
 
 	verifyApiAccess
+	AddDownloadClient
 
 	if [ "$addDeezerTopArtists" == "true" ]; then
 		log "Add Deezer Top $topLimit Artists is enabled"
@@ -216,6 +220,8 @@ DownloadFormat () {
 			log "ERROR :: Change audioBitrate to a low, high, or lossless..."
 			log "ERROR :: Exiting..."
 			NotifyWebhook "FatalError" "Invalid audioFormat and audioBitrate options set"
+			log "Script sleeping for $audioScriptInterval..."
+			sleep $audioScriptInterval
 			exit
 		fi
 	else
@@ -238,6 +244,8 @@ DownloadFormat () {
 			log "ERROR :: Change audioBitrate to a desired bitrate number, example: 192..."
 			log "ERROR :: Exiting..."
 			NotifyWebhook "FatalError" "audioBitrate options set"
+   			log "Script sleeping for $audioScriptInterval..."
+			sleep $audioScriptInterval
 			exit
 		fi
 
@@ -254,6 +262,8 @@ DownloadFormat () {
 			log "ERROR :: Invalid audioFormat options set..."
 			log "ERROR :: Change audioFormat to a desired format (opus or mp3 or aac or alac)"
 			NotifyWebhook "FatalError" "audioFormat options set"
+   			log "Script sleeping for $audioScriptInterval..."
+			sleep $audioScriptInterval
 			exit
 		fi
 
@@ -379,6 +389,8 @@ TidalClientTest () {
 		rm -rf "$audioPath"/incomplete/*
 		NotifyWebhook "Error" "TIDAL not authenticated but configured"
   		tidalClientTest="failed"
+    		log "Script sleeping for $audioScriptInterval..."
+		sleep $audioScriptInterval
 		exit
 	else
 		rm -rf "$audioPath"/incomplete/*
@@ -984,6 +996,8 @@ DeezerClientTest () {
 		rm -rf $audioPath/incomplete/*
 		NotifyWebhook "Error" "DEEZER not authenticated but configured"
   		deezerClientTest="fail"
+    		log "Script sleeping for $audioScriptInterval..."
+		sleep $audioScriptInterval
 		exit
 	else
 		rm -rf $audioPath/incomplete/*
@@ -999,6 +1013,8 @@ LidarrRootFolderCheck () {
 		log "ERROR :: Configure root folder in Lidarr to continue..."
 		log "ERROR :: Exiting..."
 		NotifyWebhook "FatalError" "No root folder found"
+  		log "Script sleeping for $audioScriptInterval..."
+		sleep $audioScriptInterval
 		exit
 	fi
 }
@@ -1861,7 +1877,7 @@ log "Starting Script...."
 for (( ; ; )); do
 	let i++
  	logfileSetup
-        verifyConfig
+    verifyConfig
 	getArrAppInfo
 	verifyApiAccess
 	AudioProcess
